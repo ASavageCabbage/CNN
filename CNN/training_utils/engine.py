@@ -79,7 +79,7 @@ class Engine:
         self.dset=WCH5Dataset(config.path, config.val_split, config.test_split)
 
         self.train_iter=DataLoader(self.dset,
-                                   batch_size=config.batch_size,
+                                   batch_size=config.batch_size_train,
                                    shuffle=True,
                                    sampler=SubsetRandomSampler(self.dset.train_indices))
         
@@ -89,7 +89,7 @@ class Engine:
                                  sampler=SubsetRandomSampler(self.dset.val_indices))
         
         self.test_iter=DataLoader(self.dset,
-                                  batch_size=config.batch_size_val,
+                                  batch_size=config.batch_size_test,
                                   shuffle=True,
                                   sampler=SubsetRandomSampler(self.dset.test_indices))
 
@@ -132,7 +132,7 @@ class Engine:
             #print("this is the data size after permuting: {}".format(data.size()))
             prediction = self.model(self.data)
             # Training
-            loss,acc=-1,-1 # NOTE: What is acc supposed o do? It's never used....
+            loss,acc=-1,-1 # NOTE: What is acc supposed to do? It's never used....
             
             loss = self.criterion(prediction,self.label)
             self.loss = loss
