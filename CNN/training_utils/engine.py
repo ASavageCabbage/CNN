@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 
 
 import numpy as np
+import datetime as time
 
 from statistics import mean
 
@@ -57,8 +58,8 @@ class Engine:
 
         self.model.to(self.device)
 
-        self.opt = opt.Adam(self.model.parameters(),eps=1e-3)
-        self.crit = nn.CrossEntropyLoss()
+        self.optimizer = optim.Adam(self.model.parameters(),eps=1e-3)
+        self.criterion = nn.CrossEntropyLoss()
         self.softmax = nn.Softmax(dim=1)
 
         #placeholders for data and labels
@@ -110,7 +111,6 @@ class Engine:
         self.config=config
 
 
-
     def forward(self,train=True):
         """
         Args: self should have attributes, model, criterion, softmax, data, label
@@ -119,18 +119,18 @@ class Engine:
         with torch.set_grad_enabled(train):
             # Prediction
             #print("this is the data size before permuting: {}".format(data.size()))
-            data = data.permute(0,3,1,2)
+            self.data = self.data.permute(0,3,1,2)
             #print("this is the data size after permuting: {}".format(data.size()))
-            prediction = self.model(data)
+            prediction = self.model(self.data)
             # Training
             loss,acc=-1,-1
             
-            loss = self.criterion(prediction,label)
+            loss = self.criterion(prediction,self.label)
             self.loss = loss
             
             softmax    = self.softmax(prediction).cpu().detach().numpy()
             prediction = torch.argmax(prediction,dim=-1)
-            accuracy   = (prediction == label).sum().item() / float(prediction.nelement())        
+            accuracy   = (prediction == self.label).sum().item() / float(prediction.nelement())        
             prediction = prediction.cpu().detach().numpy()
         
         return {'prediction' : prediction,
