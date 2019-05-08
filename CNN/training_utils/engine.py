@@ -12,13 +12,8 @@ import torch.nn as nn
 from torch.autograd import Variable # Currently unused
 from torch.utils.data import DataLoader
 
-
-from utils import progress_bar, CSVData
-from IPython.display import display
-
-
 import numpy as np # Currently unused
-import datetime as time
+import time
 
 from statistics import mean # Currently unused
 
@@ -76,6 +71,7 @@ class Engine:
         self.labels=None
         self.iteration=None
 
+        # NOTE: The functionality of this block is coupled to the implementation of WCH5Dataset in the iotools module
         self.dset=WCH5Dataset(config.path, config.val_split, config.test_split)
 
         self.train_iter=DataLoader(self.dset,
@@ -155,10 +151,10 @@ class Engine:
     # ========================================================================
     def train(self, epochs, report_interval=10, valid_interval=100):
         # CODE BELOW COPY-PASTED FROM [HKML CNN Image Classification.ipynb]
-        # (variable names changed to match new Engine architecture and added comments)
+        # (variable names changed to match new Engine architecture. Added comments and minor debugging)
         
         # Prepare attributes for data logging
-        self.train_log, self.test_log = CSVData('log_train.csv'), CSVData('log_test.csv')
+        self.train_log, self.test_log = CSVData(self.dirpath+'/log_train.csv'), CSVData(self.dirpath+'/log_test.csv')
         # Set neural net to training mode
         self.model.train()
         # Initialize epoch counter
@@ -167,6 +163,8 @@ class Engine:
         iteration = 0
         # Training loop
         while (int(epoch+0.5) < epochs):
+            from notebook_utils import progress_bar, CSVData
+            from IPython.display import display
             print('Epoch',int(epoch+0.5),'Starting @',time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             # Create a progress bar for this epoch
             progress = display(progress_bar(0,len(self.train_iter)),display_id=True)
