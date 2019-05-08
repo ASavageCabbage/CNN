@@ -76,17 +76,17 @@ class Engine:
 
         self.train_iter=DataLoader(self.dset,
                                    batch_size=config.batch_size_train,
-                                   shuffle=True,
+                                   shuffle=False,
                                    sampler=SubsetRandomSampler(self.dset.train_indices))
         
         self.val_iter=DataLoader(self.dset,
                                  batch_size=config.batch_size_val,
-                                 shuffle=True,
+                                 shuffle=False,
                                  sampler=SubsetRandomSampler(self.dset.val_indices))
         
         self.test_iter=DataLoader(self.dset,
                                   batch_size=config.batch_size_test,
-                                  shuffle=True,
+                                  shuffle=False,
                                   sampler=SubsetRandomSampler(self.dset.test_indices))
 
         
@@ -149,7 +149,7 @@ class Engine:
         self.opt.step()
         
     # ========================================================================
-    def train(self, epochs, report_interval=10, valid_interval=100):
+    def train(self, epochs=3.0, report_interval=10, valid_interval=100):
         # CODE BELOW COPY-PASTED FROM [HKML CNN Image Classification.ipynb]
         # (variable names changed to match new Engine architecture. Added comments and minor debugging)
         
