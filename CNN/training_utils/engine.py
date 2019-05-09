@@ -18,7 +18,7 @@ import time
 from statistics import mean # Currently unused
 
 import shutil # Currently unused
-import os # Currently unused
+import os
 
 import sklearn # Currently unused
 from sklearn.metrics import roc_curve # Currently unused
@@ -149,11 +149,12 @@ class Engine:
         self.opt.step()
         
     # ========================================================================
-    def train(self, epochs, report_interval=10, valid_interval=100):
+    def train(self, epochs=3.0, report_interval=10, valid_interval=100):
         # CODE BELOW COPY-PASTED FROM [HKML CNN Image Classification.ipynb]
         # (variable names changed to match new Engine architecture. Added comments and minor debugging)
         
         # Prepare attributes for data logging
+        from notebook_utils import progress_bar, CSVData
         self.train_log, self.test_log = CSVData(self.dirpath+'/log_train.csv'), CSVData(self.dirpath+'/log_test.csv')
         # Set neural net to training mode
         self.model.train()
@@ -163,7 +164,6 @@ class Engine:
         iteration = 0
         # Training loop
         while (int(epoch+0.5) < epochs):
-            from notebook_utils import progress_bar, CSVData
             from IPython.display import display
             print('Epoch',int(epoch+0.5),'Starting @',time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             # Create a progress bar for this epoch
