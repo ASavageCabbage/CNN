@@ -76,17 +76,17 @@ class Engine:
 
         self.train_iter=DataLoader(self.dset,
                                    batch_size=config.batch_size_train,
-                                   shuffle=True,
+                                   shuffle=False,
                                    sampler=SubsetRandomSampler(self.dset.train_indices))
         
         self.val_iter=DataLoader(self.dset,
                                  batch_size=config.batch_size_val,
-                                 shuffle=True,
+                                 shuffle=False,
                                  sampler=SubsetRandomSampler(self.dset.val_indices))
         
         self.test_iter=DataLoader(self.dset,
                                   batch_size=config.batch_size_test,
-                                  shuffle=True,
+                                  shuffle=False,
                                   sampler=SubsetRandomSampler(self.dset.test_indices))
 
         
