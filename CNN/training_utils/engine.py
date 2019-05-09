@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 
 import numpy as np # Currently unused
 import time
+import notebook_utils as nu
 
 from statistics import mean # Currently unused
 
@@ -118,24 +119,24 @@ class Engine:
 
     def forward(self,train=True):
         """
-        Args: self should have attributes, model, criterion, softmax, data, label
+        Args: self should have attributes, model, criterion, softmax, data, labels
         Returns: a dictionary of predicted labels, softmax, loss, and accuracy
         """
         with torch.set_grad_enabled(train):
             # Prediction
-            #print("this is the data size before permuting: {}".format(data.size()))
+            #print("this is the data size before permuting: {}".format(self.data.size()))
             self.data = self.data.permute(0,3,1,2)
-            #print("this is the data size after permuting: {}".format(data.size()))
+            #print("this is the data size after permuting: {}".format(self.data.size()))
             prediction = self.model(self.data)
             # Training
-            loss,acc=-1,-1 # NOTE: What is acc supposed to do? It's never used....
-            
-            loss = self.criterion(prediction,self.label)
+            loss = -1
+            print(self.labels.detach().numpy())
+            loss = self.criterion(prediction,self.labels)
             self.loss = loss
             
             softmax    = self.softmax(prediction).cpu().detach().numpy()
             prediction = torch.argmax(prediction,dim=-1)
-            accuracy   = (prediction == self.label).sum().item() / float(prediction.nelement())        
+            accuracy   = (prediction == self.labels).sum().item() / float(prediction.nelement())        
             prediction = prediction.cpu().detach().numpy()
         
         return {'prediction' : prediction,
@@ -144,18 +145,17 @@ class Engine:
                 'accuracy'   : accuracy}
 
     def backward(self):
-        self.opt.zero_grad()  # Reset gradients accumulation
+        self.optimizer.zero_grad()  # Reset gradients accumulation
         self.loss.backward()
-        self.opt.step()
+        self.optimizer.step()
         
     # ========================================================================
     def train(self, epochs=3.0, report_interval=10, valid_interval=100):
-        # CODE BELOW COPY-PASTED FROM [HKML CNN Image Classification.ipynb]
+        # CODE BELOW FROM [HKML CNN Image Classification.ipynb]
         # (variable names changed to match new Engine architecture. Added comments and minor debugging)
         
         # Prepare attributes for data logging
-        from notebook_utils import progress_bar, CSVData
-        self.train_log, self.test_log = CSVData(self.dirpath+'/log_train.csv'), CSVData(self.dirpath+'/log_test.csv')
+        self.train_log, self.test_log = nu.CSVData(self.dirpath+'/log_train.csv'), nu.CSVData(self.dirpath+'/log_test.csv')
         # Set neural net to training mode
         self.model.train()
         # Initialize epoch counter
@@ -167,11 +167,12 @@ class Engine:
             from IPython.display import display
             print('Epoch',int(epoch+0.5),'Starting @',time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             # Create a progress bar for this epoch
-            progress = display(progress_bar(0,len(self.train_iter)),display_id=True)
+            progress = display(nu.progress_bar(0,len(self.train_iter)),display_id=True)
             # Loop over data samples and into the network forward function
             for i, data in enumerate(self.train_iter):
-                # Data and label
-                self.data, self.label = data[0:2]
+                # Data and labels
+                self.data, self.labels = data[0:2]
+                self.labels = self.labels.long()
                 # Call forward: make a prediction & measure the average error
                 res = self.forward(True)
                 # Call backward: backpropagate error and update weights
@@ -189,13 +190,13 @@ class Engine:
                 # once in a while, report
                 if i==0 or (i+1)%report_interval == 0:
                     message = '... Iteration %d ... Epoch %1.2f ... Loss %1.3f ... Accuracy %1.3f' % (iteration,epoch,res['loss'],res['accuracy'])
-                    progress.update(progress_bar((i+1),len(self.train_iter),message))
+                    progress.update(nu.progress_bar((i+1),len(self.train_iter),message))
                 # more rarely, run validation
                 if (i+1)%valid_interval == 0:
                     with torch.no_grad():
                         self.model.eval()
                         test_data = next(iter(self.test_iter))
-                        self.data, self.label = test_data[0:2]
+                        self.data, self.labels = test_data[0:2]
                         res = self.forward(False)
                         self.test_log.record(['iteration','epoch','accuracy','loss'],[iteration,epoch,res['accuracy'],res['loss']])
                         self.test_log.write()
@@ -203,7 +204,7 @@ class Engine:
                 if epoch >= epochs:
                     break
             message = '... Iteration %d ... Epoch %1.2f ... Loss %1.3f ... Accuracy %1.3f' % (iteration,epoch,res['loss'],res['accuracy'])
-            progress.update(progress_bar((i+1),len(self.train_iter),message))
+            progress.update(nu.progress_bar((i+1),len(self.train_iter),message))
         
         self.test_log.close()
         self.train_log.close()
@@ -220,7 +221,7 @@ class Engine:
         # 2) network weight
         torch.save({
             'global_step': self.iteration,
-            'optimizer': self.opt.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
             'state_dict': self.model.state_dict()
         }, filename)
         return filename
@@ -233,8 +234,8 @@ class Engine:
             # load network weights
             self.net.load_state_dict(checkpoint['state_dict'], strict=False)
             # if optim is provided, load the state of the optim
-            if self.opt is not None:
-                self.opt.load_state_dict(checkpoint['optimizer'])
+            if self.optimizer is not None:
+                self.optimizer.load_state_dict(checkpoint['optimizer'])
             # load iteration count
             self.iteration = checkpoint['global_step']
     
